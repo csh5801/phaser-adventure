@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { createCharacterAnims } from "../anims/character";
 
 export default class GameScene extends Phaser.Scene {
   cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -19,59 +20,22 @@ export default class GameScene extends Phaser.Scene {
 
     const map = this.make.tilemap({ key: "adventure" });
     const tileset = map.addTilesetImage("overworld", "tiles");
-
+    
     map.createLayer("ground", tileset);
 
-    this.anims.create({
-       key: "character-idle-down",
-       frames: this.anims.generateFrameNumbers("character", { start: 0, end: 0}), 
-    });
-
-    this.anims.create({
-        key: "character-idle-up",
-        frames: this.anims.generateFrameNumbers("character", { start: 34, end: 34}), 
-     });
-
-     this.anims.create({
-        key: "character-idle-left",
-        frames: this.anims.generateFrameNumbers("character", { start: 51, end: 51}), 
-     });
-
-     this.anims.create({
-        key: "character-idle-right",
-        frames: this.anims.generateFrameNumbers("character", { start: 17, end: 17}), 
-     });
-
-     
-     this.anims.create({
-        key: "character-walk-down",
-        frames: this.anims.generateFrameNumbers("character", { start: 0, end: 3}), 
-        frameRate: 8,
-        repeat: -1,
-    });
-
-    this.anims.create({
-        key: "character-walk-up",
-        frames: this.anims.generateFrameNumbers("character", { start: 34, end: 37}), 
-        frameRate: 8,
-        repeat: -1,
-    });
-
-    this.anims.create({
-        key: "character-walk-left",
-        frames: this.anims.generateFrameNumbers("character", { start: 51, end: 54}), 
-        frameRate: 8,
-        repeat: -1,
-    });
-
-    this.anims.create({
-        key: "character-walk-right",
-        frames: this.anims.generateFrameNumbers("character", { start: 17, end: 20}), 
-        frameRate: 8,
-        repeat: -1,
-    });
-
+    const treesLayer = map.createLayer("trees", tileset);
+    treesLayer.setCollisionByProperty( { collides : true} );
+    
     this.character = this.physics.add.sprite(50, 50, "character");
+    this.cameras.main.startFollow(this.character, true);
+
+    const housesLayer = map.createLayer("houses", tileset);
+    housesLayer.setCollisionByProperty( { collides : true} );
+
+    createCharacterAnims(this.anims);
+
+    this.physics.add.collider(housesLayer, this.character);
+    this.physics.add.collider(treesLayer, this.character);
   }
   
     update() {
