@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { createCharacterAnims } from "../anims/character";
+import { createNpcAnims } from "../anims/npc";
 
 export default class GameScene extends Phaser.Scene {
   cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -13,9 +14,13 @@ export default class GameScene extends Phaser.Scene {
     this.load.image("tiles", "/overworld.png");
     this.load.tilemapTiledJSON("adventure", "/phaser-adventure.json");
     this.load.spritesheet("character", "/character.png", { frameWidth: 16, frameHeight: 32});
-}
+    this.load.spritesheet("npc", "/npc.png", { frameWidth: 16, frameHeight: 32});
+  }
 
   create() {
+    createNpcAnims(this.anims);
+    createCharacterAnims(this.anims);
+
     this.cursors = this.input.keyboard.createCursorKeys();
 
     const map = this.make.tilemap({ key: "adventure" });
@@ -26,16 +31,53 @@ export default class GameScene extends Phaser.Scene {
     const treesLayer = map.createLayer("trees", tileset);
     treesLayer.setCollisionByProperty( { collides : true} );
     
-    this.character = this.physics.add.sprite(50, 50, "character");
-    this.cameras.main.startFollow(this.character, true);
-
     const housesLayer = map.createLayer("houses", tileset);
     housesLayer.setCollisionByProperty( { collides : true} );
 
-    createCharacterAnims(this.anims);
+    this.character = this.physics.add.sprite(50, 50, "character");
+    this.cameras.main.startFollow(this.character, true);
+
+    const npcGroup = this.physics.add.group();
+    
+    for (let i = 0; i < 5; i++) {
+      const x = Phaser.Math.Between(20, 400);
+      const y = Phaser.Math.Between(20, 400);
+      npcGroup.get(x, y,"npc")
+    }
+
+    this.time.addEvent ({
+      delay: 1000,
+      callback: () => {
+       npcGroup.children.each((npc) => {
+        const n = Phaser.Math.Between(1, 4);
+         switch (n) {
+         case 1: 
+           npc.setVelocity(0, -25);
+           npc.play("npc-walk-up");
+           break;
+         case 2: 
+           npc.setVelocity(0, 25);
+           npc.play("npc-walk-down");
+           break;
+          case 3:
+           npc.setVelocity(-25, 0);
+           npc.play("npc-walk-left"); 
+            break;
+          case 4:
+           npc.setVelocity(25, 0);
+           npc.play("npc-walk-right"); 
+            break;
+         }
+      });
+    },
+      loop: true
+    });
 
     this.physics.add.collider(housesLayer, this.character);
     this.physics.add.collider(treesLayer, this.character);
+    this.physics.add.collider(housesLayer, npcGroup);
+    this.physics.add.collider(treesLayer, npcGroup);
+    this.physics.add.collider(npcGroup, this.character);
   }
   
     update() {
