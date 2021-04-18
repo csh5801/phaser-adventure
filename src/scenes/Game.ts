@@ -5,9 +5,23 @@ import { createNpcAnims } from "../anims/npc";
 export default class GameScene extends Phaser.Scene {
   cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   character!: Phaser.Physics.Arcade.Sprite;
+  takingDamage = false;
+  damageTime = 0; 
 
   constructor() {
     super("game")
+  }
+
+  hitNpc(character, npc) {
+    this.takingDamage = true
+    this.character.setTint(0xff0000);
+    
+    const dx = character.x - npc.x;
+    const dy = character.y - npc.y;
+    const vec = new Phaser.Math.Vector2(dx, dy).normalize().scale(100);
+
+    this.character.setVelocityX(vec.x, vec.y)
+    npc.setVelocity(0, 0)
   }
 
   preload() {
@@ -77,13 +91,25 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.collider(treesLayer, this.character);
     this.physics.add.collider(housesLayer, npcGroup);
     this.physics.add.collider(treesLayer, npcGroup);
-    this.physics.add.collider(npcGroup, this.character);
+    this.physics.add.collider(this.character, npcGroup, this.hitNpc, null, this);
   }
   
-    update() {
+    update(t: number, dt: number) {
      if (!this.cursors || !this.character){
          return;
      }
+
+     this.damageTime += dt;
+
+     if (this.damageTime > 250) {
+       this.damageTime = 0;
+       this.takingDamage = false;
+       this.character.setTint(0xffffff);
+     }
+
+    if(this.takingDamage) {
+      return;
+    }
 
     const speed = 50;
 
